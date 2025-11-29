@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/send", "destination": "/api/send.js" }
+  ]
+}

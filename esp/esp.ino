@@ -1,5 +1,6 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -10,10 +11,12 @@
 const char* ssid     = "BlackY Pixel 7";
 const char* password = "12345678";
 
-// Server address (fill these)
-const char* serverIP   = "10.170.182.10"; // <-- set this to your PC's IP visible to ESP
-const int   serverPort = 3000;
-const char* serverPath = "/send";
+// Server address (Vercel)
+// Replace with your actual Vercel hostname (e.g. "my-app.vercel.app")
+const char* serverHost    = "voltura-gamma.vercel.app"; // <-- set this
+const char* serverPath    = "/send";               // route configured in vercel.json
+const bool  serverUseHttps = true;
+const int   serverPort     = 0; // default (443)
 
 // OLED config (SSD1306 128x32 I2C)
 #define SCREEN_WIDTH 128
@@ -46,8 +49,10 @@ float current_pf = 1.0;      // power factor
 #define CURRENT_PIN 35
 
 String buildServerURL() {
-	// ...build full URL from parts...
-	return String("http://") + serverIP + ":" + String(serverPort) + serverPath;
+	String scheme = serverUseHttps ? "https://" : "http://";
+	String hostPort = String(serverHost);
+	if (serverPort != 0) hostPort += String(":") + String(serverPort);
+	return scheme + hostPort + String(serverPath);
 }
 
 void connectWiFi() {
@@ -137,10 +142,14 @@ void loop() {
 	int httpResponseCode = -1;
 	String jsonData;
 	if (WiFi.status() == WL_CONNECTED) {
+		WiFiClientSecure client;
+		// NOTE: for production, set client.setCACert(...) with proper CA.
+		// Using setInsecure() skips certificate verification and is easier for quick tests:
+		client.setInsecure();
+
 		HTTPClient http;
 		String url = buildServerURL();
-
-		http.begin(url);
+		http.begin(client, url);
 		http.addHeader("Content-Type", "application/json");
 
 		// include real power and PF in JSON
