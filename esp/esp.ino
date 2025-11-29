@@ -13,7 +13,7 @@ const char* password = "12345678";
 
 // Server address (Vercel)
 // Replace with your actual Vercel hostname (e.g. "my-app.vercel.app")
-const char* serverHost    = "your-app.vercel.app"; // <-- set this
+const char* serverHost    = "voltura-gamma.vercel.app"; // <-- set this
 const char* serverPath    = "/send";               // route configured in vercel.json
 const bool  serverUseHttps = true;
 const int   serverPort     = 0; // default (443)
