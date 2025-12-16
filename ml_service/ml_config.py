@@ -1,15 +1,15 @@
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import sys
 
 # Add root directory to path to find the .env file
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT_DIR)
-load_dotenv(dotenv_path=os.path.join(ROOT_DIR, '.env'))
+# load_dotenv(dotenv_path=os.path.join(ROOT_DIR, '.env'))
 
 # Configuration constants
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/defaultDB")
-COLLECTION_NAME = "sensors" # Based on the project context (The user said 'voldata' but the schema in server.js uses 'Sensor' model which usually maps to 'sensors' collection. I should check the database or stick to what the user provided if they are sure. The user provided 'voldata' in the prompt "mongodb+srv://.../volData". Wait, the connection string has database name 'volData'. Mongoose by default lowercases and pluralizes the model name 'Sensor' -> 'sensors'. However, the user's prompt explicitly says `COLLECTION_NAME = "voldata"`. I will check the actual collection name if possible, or stick to the user's code. The user's code in 2.1 says `COLLECTION_NAME = "voldata"`. But in `server.js` they used `mongoose.model("Sensor", SensorSchema)`. Mongoose defaults to 'sensors'. Let's check `server.js` again.
+MONGO_URI = "mongodb+srv://blacky:2419624196@voltura.vl2m5kl.mongodb.net/volData?retryWrites=true&w=majority"
+COLLECTION_NAME = "finalVolData"
 # server.js: const Sensor = mongoose.model("Sensor", SensorSchema);
 # This usually creates a collection named 'sensors'.
 # However, the user might have existing data in 'voldata'.
@@ -31,6 +31,3 @@ COLLECTION_NAME = "sensors" # Based on the project context (The user said 'volda
 # I will use "sensors" to be safe with Mongoose, but I will double check `server.js` content I read earlier.
 # `const Sensor = mongoose.model("Sensor", SensorSchema);` -> Collection: `sensors`.
 # I will use `sensors`.
-
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/defaultDB")
-COLLECTION_NAME = "sensors" 
