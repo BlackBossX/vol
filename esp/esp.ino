@@ -10,7 +10,7 @@
 #include <DHTesp.h>
 
 // Server URL (NO PORT)
-const char* serverURL = "http://192.168.43.249:3000/send";
+const char* serverURL = "http://13.203.221.0/send";
 
 // OLED config (SSD1306 128x32 I2C)
 #define SCREEN_WIDTH 128
@@ -34,14 +34,14 @@ float humidity = 0;
 #define SDA_PIN 23
 #define SCL_PIN 22
 #define DHTPIN 21
-#define VOLTAGE_PIN 18
-#define CURRENT_PIN_1 12
-#define CURRENT_PIN_2 14
-#define CURRENT_PIN_3 27
+#define VOLTAGE_PIN 34
+#define CURRENT_PIN_1 35
+#define CURRENT_PIN_2 39
+#define CURRENT_PIN_3 36
 
 // Warm-up configuration
-#define WARMUP_READINGS 4
-#define WARMUP_DELAY_MS 500
+#define WARMUP_READINGS 5
+#define WARMUP_DELAY_MS 0
 bool isWarmedUp = false;
 int warmupCounter = 0;
 
@@ -417,12 +417,12 @@ bool connectToWiFi() {
 void performWarmup() {
   displayMsg("Warming Up...", String(warmupCounter) + "/" + String(WARMUP_READINGS));
   
-  emon1.calcVI(10, 1000);
-  emon2.calcVI(10, 1000);
-  emon3.calcVI(10, 1000);
+  emon1.calcVI(20, 2000);
+  emon2.calcVI(20, 2000);
+  emon3.calcVI(20, 2000);
 
-  dht.getTemperature();
-  dht.getHumidity();
+  // dht.getTemperature();
+  // dht.getHumidity();
   
   Serial.print("Warm-up reading ");
   Serial.print(warmupCounter + 1);
@@ -510,7 +510,7 @@ void loop() {
   emon3.calcVI(10, 1000);
 
 
-  Vrms = emon1.Vrms;
+  Vrms = emon1.Vrms / sqrt(2);
   
   Irms1 = emon1.Irms / 1000.0;
   Irms2 = emon2.Irms / 1000.0;
@@ -582,7 +582,7 @@ display.printf("T:%d H:%d %", (int)tempC, (int)humidity);
 display.display();
 
 
-  delay(1000);
+  delay(100);
 }
 
 void displayMsg(String l1, String l2) {
