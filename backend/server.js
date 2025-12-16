@@ -1,7 +1,4 @@
-<<<<<<< Updated upstream
-=======
 // require('dotenv').config();
->>>>>>> Stashed changes
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
