@@ -10,7 +10,7 @@
 #include <DHTesp.h>
 
 // Server URL (NO PORT)
-const char* serverURL = "http://3.108.238.200/send";
+const char* serverURL = "http://192.168.43.249:3000/send";
 
 // OLED config (SSD1306 128x32 I2C)
 #define SCREEN_WIDTH 128
@@ -19,29 +19,25 @@ const char* serverURL = "http://3.108.238.200/send";
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // Sensor objects
-EnergyMonitor emon1;
+EnergyMonitor emon1, emon2, emon3;
 DHTesp dht;
 
 // Measurements
 float Vrms = 0;
-float Irms = 0;
-float watt = 0;
+float Irms1 = 0, Irms2 = 0, Irms3 = 0;
+float watt1 = 0, watt2 = 0, watt3 = 0;
+float totalWatt = 0;
 float tempC = 0;
 float humidity = 0;
 
-// Advanced values
-float current_Vrms = 0;
-float current_Irms = 0;
-float current_realP = 0;
-float current_appP = 0;
-float current_pf = 1.0;
-
 // Pin definitions
-#define SDA_PIN 22
-#define SCL_PIN 23
-#define DHTPIN 33
-#define VOLTAGE_PIN 34
-#define CURRENT_PIN 35
+#define SDA_PIN 23
+#define SCL_PIN 22
+#define DHTPIN 21
+#define VOLTAGE_PIN 18
+#define CURRENT_PIN_1 12
+#define CURRENT_PIN_2 14
+#define CURRENT_PIN_3 27
 
 // Warm-up configuration
 #define WARMUP_READINGS 4
@@ -54,7 +50,7 @@ WebServer server(80);
 DNSServer dnsServer;
 Preferences preferences;
 
-const char* apSSID = "EnergyMonitor-Setup";
+const char* apSSID = "Elektrum-Setup";
 const char* apPassword = "12345678";
 bool isAPMode = false;
 bool shouldRestart = false;
@@ -407,8 +403,8 @@ bool connectToWiFi() {
   
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("\nConnected!");
-    Serial.print("IP: ");
-    Serial.println(WiFi.localIP());
+    // Serial.print("IP: ");
+    // Serial.println(WiFi.localIP());
     displayMsg("Connected!", WiFi.localIP().toString().c_str());
     delay(2000);
     return true;
@@ -421,7 +417,10 @@ bool connectToWiFi() {
 void performWarmup() {
   displayMsg("Warming Up...", String(warmupCounter) + "/" + String(WARMUP_READINGS));
   
-  emon1.calcVI(20, 2000);
+  emon1.calcVI(10, 1000);
+  emon2.calcVI(10, 1000);
+  emon3.calcVI(10, 1000);
+
   dht.getTemperature();
   dht.getHumidity();
   
@@ -429,11 +428,7 @@ void performWarmup() {
   Serial.print(warmupCounter + 1);
   Serial.print("/");
   Serial.print(WARMUP_READINGS);
-  Serial.print(" - V: ");
-  Serial.print(emon1.Vrms);
-  Serial.print("V, I: ");
-  Serial.print(emon1.Irms / 1000.0);
-  Serial.println("A (discarded)");
+  Serial.println(" (discarded)");
   
   warmupCounter++;
   
@@ -466,7 +461,11 @@ void setup() {
 
   dht.setup(DHTPIN, DHTesp::DHT11);
   emon1.voltage(VOLTAGE_PIN, 148.3, 1.7);
-  emon1.current(CURRENT_PIN, 1160.0);
+  emon1.current(CURRENT_PIN_1, 1160.0);
+  emon2.voltage(VOLTAGE_PIN, 148.3, 1.7);
+  emon2.current(CURRENT_PIN_2, 1160.0);
+  emon3.voltage(VOLTAGE_PIN, 148.3, 1.7);
+  emon3.current(CURRENT_PIN_3, 1160.0);
 
   displayMsg("Energy Monitor", "Initializing...");
   delay(1000);
@@ -506,17 +505,22 @@ void loop() {
     return;
   }
 
-  emon1.calcVI(20, 2000);
+  emon1.calcVI(10, 1000);
+  emon2.calcVI(10, 1000);
+  emon3.calcVI(10, 1000);
 
-  current_Vrms   = emon1.Vrms;
-  current_Irms   = emon1.Irms / 1000.0;
-  current_realP  = emon1.realPower;
-  current_appP   = emon1.apparentPower;
-  current_pf     = emon1.powerFactor;
 
-  Vrms = current_Vrms;
-  Irms = current_Irms;
-  watt = Vrms * Irms;
+  Vrms = emon1.Vrms;
+  
+  Irms1 = emon1.Irms / 1000.0;
+  Irms2 = emon2.Irms / 1000.0;
+  Irms3 = emon3.Irms / 1000.0;
+  
+  watt1 = Vrms * Irms1;
+  watt2 = Vrms * Irms2;
+  watt3 = Vrms * Irms3;
+  
+  totalWatt = watt1 + watt2 + watt3;
 
   tempC = dht.getTemperature();
   humidity = dht.getHumidity();
@@ -531,50 +535,52 @@ void loop() {
     http.addHeader("Content-Type", "application/json");
 
     jsonData = String("{\"volt\":") + String(Vrms, 1) +
-               String(",\"amps\":") + String(Irms, 3) +
-               String(",\"watt\":") + String(watt, 2) +
+               String(",\"current1\":") + String(Irms1, 3) +
+               String(",\"current2\":") + String(Irms2, 3) +
+               String(",\"current3\":") + String(Irms3, 3) +
+               String(",\"power1\":") + String(watt1, 2) +
+               String(",\"power2\":") + String(watt2, 2) +
+               String(",\"power3\":") + String(watt3, 2) +
+               String(",\"total_power\":") + String(totalWatt, 2) +
                String(",\"temperature\":") + String(tempC, 1) +
                String(",\"humidity\":") + String(humidity, 1) +
                String("}");
 
     httpResponseCode = http.POST(jsonData);
 
-    Serial.print("POST ");
-    Serial.print(serverURL);
-    Serial.print(" -> ");
-    Serial.println(httpResponseCode);
     Serial.println(jsonData);
 
     http.end();
   }
 
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
+display.clearDisplay();
+display.setTextSize(1);
+display.setTextColor(SSD1306_WHITE);
 
-  display.setCursor(0, 0);
-  display.print("IP:");
-  display.println(WiFi.localIP());
+// Row 1 – Total Power
+display.setCursor(0, 0);
+display.printf("P:%.1f W", totalWatt);
 
-  display.setCursor(0, 8);
-  display.print("V:");
-  display.print(Vrms, 1);
-  display.print(" A:");
-  display.print(Irms, 3);
+// Row 2 – Voltage
+display.setCursor(0, 8);
+display.printf("V:%.2f V", Vrms);
 
-  display.setCursor(0, 16);
-  display.print("P:");
-  display.print(watt, 2);
+// Row 3 – Currents I1 & I2
+display.setCursor(0, 16);
+display.printf("I1:%.2f A", Irms1);
 
-  display.setCursor(0, 24);
-  display.print("T:");
-  display.print(tempC, 1);
-  display.print(" H:");
-  display.print(humidity, 0);
-  display.print("% R:");
-  display.print(httpResponseCode);
+display.setCursor(64, 16);
+display.printf("I2:%.2f A", Irms2);
 
-  display.display();
+// Row 4 – Current I3 + Temp & Humidity
+display.setCursor(0, 24);
+display.printf("I3:%.2f A", Irms3);
+
+display.setCursor(64, 24);
+display.printf("T:%d H:%d %", (int)tempC, (int)humidity);
+
+display.display();
+
 
   delay(1000);
 }

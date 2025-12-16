@@ -21,14 +21,20 @@ mongoose.set('strictQuery', false);
 // Schema (kept because you requested to store one dataset)
 const SensorSchema = new mongoose.Schema({
   volt: Number,
-  amps: Number,
-  watt: Number,
+  current1: Number,
+  current2: Number,
+  current3: Number,
+  power1: Number,
+  power2: Number,
+  power3: Number,
+  total_power: Number,
+  watt: Number, // Kept for ML compatibility (mapped from total_power)
   temperature: Number,
   humidity: Number,
   time: { type: Date, default: Date.now }
 });
 
-const Sensor = mongoose.model("Sensor", SensorSchema);
+const Sensor = mongoose.model("TestAmp", SensorSchema);
 
 // simple request logger for debugging
 app.use((req, res, next) => {
@@ -59,18 +65,30 @@ app.get('/current', async (req, res) => {
 // API endpoint to receive data from ESP
 app.post('/send', async (req, res) => {
   try {
-    const { value1, value2, value3, volt, amps, watt, temperature, humidity } = req.body;
+    const { 
+      volt, 
+      current1, current2, current3, 
+      power1, power2, power3, 
+      total_power, 
+      temperature, humidity 
+    } = req.body;
+    
     const docObj = {};
 
-    // map legacy names to new fields
     if (typeof volt !== 'undefined') docObj.volt = volt;
-    else if (typeof value1 !== 'undefined') docObj.volt = value1;
-
-    if (typeof amps !== 'undefined') docObj.amps = amps;
-    else if (typeof value2 !== 'undefined') docObj.amps = value2;
-
-    if (typeof watt !== 'undefined') docObj.watt = watt;
-    else if (typeof value3 !== 'undefined') docObj.watt = value3;
+    
+    if (typeof current1 !== 'undefined') docObj.current1 = current1;
+    if (typeof current2 !== 'undefined') docObj.current2 = current2;
+    if (typeof current3 !== 'undefined') docObj.current3 = current3;
+    
+    if (typeof power1 !== 'undefined') docObj.power1 = power1;
+    if (typeof power2 !== 'undefined') docObj.power2 = power2;
+    if (typeof power3 !== 'undefined') docObj.power3 = power3;
+    
+    if (typeof total_power !== 'undefined') {
+      docObj.total_power = total_power;
+      docObj.watt = total_power; // Map to watt for ML compatibility
+    }
 
     if (typeof temperature !== 'undefined') docObj.temperature = temperature;
     if (typeof humidity !== 'undefined') docObj.humidity = humidity;
