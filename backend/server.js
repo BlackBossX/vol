@@ -10,17 +10,16 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-<<<<<<< Updated upstream
 // MongoDB connection (hardcoded)
 const mongoUri = 'mongodb+srv://blacky:2419624196@voltura.vl2m5kl.mongodb.net/volData?retryWrites=true&w=majority';
-=======
+
 // MongoDB connection
 const mongoUri = "mongodb+srv://blacky:2419624196@voltura.vl2m5kl.mongodb.net/volData?retryWrites=true&w=majority";
 if (!mongoUri) {
   console.error("❌ MONGO_URI missing in .env");
   process.exit(1);
 }
->>>>>>> Stashed changes
+
 mongoose.set('strictQuery', false);
 
 // Schema (kept because you requested to store one dataset)
