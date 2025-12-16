@@ -1,4 +1,3 @@
-require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
@@ -10,12 +9,8 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// MongoDB connection
-const mongoUri = process.env.MONGO_URI;
-if (!mongoUri) {
-  console.error("❌ MONGO_URI missing in .env");
-  process.exit(1);
-}
+// MongoDB connection (hardcoded)
+const mongoUri = 'mongodb+srv://blacky:2419624196@voltura.vl2m5kl.mongodb.net/volData?retryWrites=true&w=majority';
 mongoose.set('strictQuery', false);
 
 // Schema (kept because you requested to store one dataset)
@@ -65,26 +60,26 @@ app.get('/current', async (req, res) => {
 // API endpoint to receive data from ESP
 app.post('/send', async (req, res) => {
   try {
-    const { 
-      volt, 
-      current1, current2, current3, 
-      power1, power2, power3, 
-      total_power, 
-      temperature, humidity 
+    const {
+      volt,
+      current1, current2, current3,
+      power1, power2, power3,
+      total_power,
+      temperature, humidity
     } = req.body;
-    
+
     const docObj = {};
 
     if (typeof volt !== 'undefined') docObj.volt = volt;
-    
+
     if (typeof current1 !== 'undefined') docObj.current1 = current1;
     if (typeof current2 !== 'undefined') docObj.current2 = current2;
     if (typeof current3 !== 'undefined') docObj.current3 = current3;
-    
+
     if (typeof power1 !== 'undefined') docObj.power1 = power1;
     if (typeof power2 !== 'undefined') docObj.power2 = power2;
     if (typeof power3 !== 'undefined') docObj.power3 = power3;
-    
+
     if (typeof total_power !== 'undefined') {
       docObj.total_power = total_power;
       docObj.watt = total_power; // Map to watt for ML compatibility
@@ -216,7 +211,7 @@ mongoose.connect(mongoUri)
     process.exit(1);
   });
 
-const port = process.env.PORT || 3000;
+const port = 3000;
 // listen on all interfaces so other devices can reach this server
 app.listen(port, '0.0.0.0', () => {
   console.log(`Server running on port ${port} (listening on 0.0.0.0)`);
